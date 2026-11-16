@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a wrong verdict, a crash, or unexpected output
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected versus what actually occurred.
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Exact command and configuration
+      description: The full command line and the pa11y-ci configuration it read.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Node version and operating system
+      placeholder: "Node 24.22.2, Ubuntu 24.04"
+    validations:
+      required: true
+  - type: textarea
+    id: page
+    attributes:
+      label: A page that reproduces it
+      description: The smallest HTML and CSS that shows the problem, if you have one.
+      render: html
+    validations:
+      required: false
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The command's output, and the failure record if one was written.
+      render: shell
+    validations:
+      required: false

@@ -1,0 +1,7 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/curlewlabs-com/static-a11y-check/security/advisories/new
+    about: >-
+      Anything about the local server or a run that reports a page it did not
+      check - report these privately here, not as a public issue.

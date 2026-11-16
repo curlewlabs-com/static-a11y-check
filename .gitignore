@@ -1,0 +1,4 @@
+node_modules/
+a11y-diagnostics/
+*.tgz
+.DS_Store
