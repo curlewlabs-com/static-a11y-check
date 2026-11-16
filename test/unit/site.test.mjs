@@ -41,9 +41,9 @@ function makeTree() {
   return root;
 }
 
-async function withServer(routing, fn) {
+async function withServer(fn) {
   const root = makeTree();
-  const { server, baseUrl } = await startStaticServer(root, { routing });
+  const { server, baseUrl } = await startStaticServer(root);
   try {
     await fn(baseUrl, root);
   } finally {
@@ -72,8 +72,8 @@ function rawGet(baseUrl, path) {
   });
 }
 
-test("cloudflare routing: routes match Cloudflare static-asset rules", async () => {
-  await withServer("cloudflare", async (baseUrl) => {
+test("routing: extensionless URLs and exact file paths both serve", async () => {
+  await withServer(async (baseUrl) => {
     let r = await get(baseUrl, "/");
     assert.equal(r.status, 200);
     assert.match(r.text, /root/);
@@ -108,6 +108,11 @@ test("cloudflare routing: routes match Cloudflare static-asset rules", async () 
     assert.match(r.text, /color: red/);
     assert.match(r.type, /text\/css/);
 
+    // A site whose links name its .html files is answered too.
+    r = await get(baseUrl, "/about.html");
+    assert.equal(r.status, 200);
+    assert.match(r.text, /about/);
+
     r = await get(baseUrl, "/no-such-page");
     assert.equal(r.status, 404);
   });
@@ -117,7 +122,7 @@ test("cloudflare routing: routes match Cloudflare static-asset rules", async () 
 // page importing an .mjs would be scanned with none of its script run, and
 // state the script sets would never be scored.
 test("static server: serves .mjs as JavaScript", async () => {
-  await withServer("cloudflare", async (baseUrl) => {
+  await withServer(async (baseUrl) => {
     const r = await get(baseUrl, "/module.mjs");
     assert.equal(r.status, 200);
     assert.match(r.type, /^application\/javascript/);
@@ -127,62 +132,61 @@ test("static server: serves .mjs as JavaScript", async () => {
 // A directory with no page in it is not a file to send; reading it would
 // throw inside the request handler and take the run down with it.
 test("static server: a directory without a page is 404, not a crash", async () => {
-  await withServer("cloudflare", async (baseUrl) => {
+  await withServer(async (baseUrl) => {
     assert.equal((await get(baseUrl, "/empty")).status, 404);
     assert.equal((await get(baseUrl, "/about")).status, 200);
   });
 });
 
 test("static server: a raw path that climbs out of the site is 404", async () => {
-  await withServer("files", async (baseUrl) => {
+  await withServer(async (baseUrl) => {
     assert.equal(await rawGet(baseUrl, "/../../../../etc/hosts"), 404);
     assert.equal(await rawGet(baseUrl, "/about.html"), 200);
   });
 });
 
-test("files routing: serves exact paths and index.html for a directory", async () => {
-  await withServer("files", async (baseUrl) => {
-    assert.equal((await get(baseUrl, "/about.html")).status, 200);
-    assert.equal((await get(baseUrl, "/about")).status, 404);
-    assert.match((await get(baseUrl, "/")).text, /root/);
-    assert.match((await get(baseUrl, "/apps/one/")).text, /one-index/);
-    assert.match((await get(baseUrl, "/apps/one.html")).text, /one<\/body>/);
+// Each page must be checked at a URL its routing serves that page at, or the
+// run scores a 404 page in its place.
+test("pagePath: each page's URL serves that page", async () => {
+  await withServer(async (baseUrl, root) => {
+    for (const file of findHtmlFiles(root)) {
+      const path = pagePath(file, root);
+      const served = await get(baseUrl, path);
+      assert.equal(served.status, 200, path);
+      assert.equal(served.text, readFileSync(file, "utf8"), path);
+    }
   });
 });
 
-// Each page must be checked at a URL its routing serves that page at, or the
-// run scores a 404 page in its place.
-test("pagePath: each page's URL serves that page under both routings", async () => {
-  for (const routing of ["cloudflare", "files"]) {
-    await withServer(routing, async (baseUrl, root) => {
-      for (const file of findHtmlFiles(root)) {
-        const path = pagePath(file, root, routing);
-        const served = await get(baseUrl, path);
-        assert.equal(served.status, 200, `${routing} ${path}`);
-        assert.equal(
-          served.text,
-          readFileSync(file, "utf8"),
-          `${routing} ${path}`,
-        );
-      }
-    });
-  }
-});
-
-test("pagePath: cloudflare URLs drop .html and index.html", () => {
+test("pagePath: URLs drop .html and index.html", () => {
   assert.equal(pagePath("/s/index.html", "/s"), "/");
   assert.equal(pagePath("/s/about.html", "/s"), "/about");
   assert.equal(pagePath("/s/a/b/index.html", "/s"), "/a/b/");
-  assert.equal(pagePath("/s/a/b/index.html", "/s", "files"), "/a/b/index.html");
 });
 
-test("an unknown routing is refused rather than read as the default", async () => {
-  assert.throws(
-    () => pagePath("/s/index.html", "/s", "netlify"),
-    /unsupported routing/,
-  );
-  assert.throws(
-    () => startStaticServer("/s", { routing: "netlify" }),
-    /unsupported routing/,
-  );
+// A raw `#`, `?` or `%` in a page's URL would read as a fragment, a query or
+// an escape, so the page checked would be another page, or a 404 that
+// pa11y-ci scores as the page.
+test("pagePath: a file name with URL-reserved characters is checked at its own URL", async () => {
+  await withServer(async (baseUrl, root) => {
+    for (const name of ["a b", "c#d", "e?f", "g%20h"]) {
+      writeFileSync(
+        join(root, `${name}.html`),
+        `<html><body>${name}</body></html>`,
+      );
+    }
+    for (const name of ["a b", "c#d", "e?f", "g%20h"]) {
+      const path = pagePath(join(root, `${name}.html`), root);
+      const served = await get(baseUrl, path);
+      assert.equal(served.status, 200, path);
+      assert.equal(served.text, `<html><body>${name}</body></html>`, path);
+    }
+  });
+});
+
+test("static server: a malformed escape is 404, not a crash", async () => {
+  await withServer(async (baseUrl) => {
+    assert.equal(await rawGet(baseUrl, "/%E0%A4%A"), 404);
+    assert.equal(await rawGet(baseUrl, "/about"), 200);
+  });
 });

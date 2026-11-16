@@ -25,9 +25,10 @@ technique; this packages it for a whole site, in CI.
 It also closes three gaps in running pa11y-ci by hand over a static build:
 
 - **URLs for a directory of files.** pa11y-ci needs URLs. The built-in server
-  can mirror Cloudflare's static-asset routing (`/about` serves `about.html`,
-  `/docs/` serves `docs/index.html`), so each page is checked at the URL it
-  deploys at, or serve each file at its own path.
+  answers the extensionless URLs static hosts serve (`/about` serves
+  `about.html`, `/docs/` serves `docs/index.html`), and every file at its own
+  path too, so each page is checked at the URL it deploys at. A site with no
+  pages fails rather than passing 0 of 0.
 - **Technical failures fail the run.** pa11y-ci records a page it could not
   load (a navigation timeout, a crashed renderer) as an `Error` without counting
   it in `report.errors`. This command counts anything short of a pass as a
@@ -47,7 +48,7 @@ reading green.
 Node 24 or later. Install it from a release's package tarball:
 
 ```sh
-npm install --save-dev https://github.com/curlewlabs-com/static-a11y-check/releases/download/v0.1.0/static-a11y-check-0.1.0.tgz
+npm install --save-dev https://github.com/curlewlabs-com/static-a11y-check/releases/download/v0.2.0/static-a11y-check-0.2.0.tgz
 ```
 
 Its one dependency, pa11y-ci, brings puppeteer, which downloads the browser it
@@ -79,7 +80,7 @@ npx static-a11y-check
 or name them:
 
 ```sh
-npx static-a11y-check --www-dir dist --config a11y.json --routing files
+npx static-a11y-check --www-dir dist --config a11y.json
 ```
 
 A failing page prints like this:
@@ -96,7 +97,6 @@ FAIL  / - 1 error(s)
 | ----------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--www-dir <dir>`             | `www`              | The built site to serve.                                                                                                                                                                                                                                               |
 | `--config <file>`             | `.pa11yci.json`    | The pa11y-ci configuration. Its `defaults` (or the whole file, if it has none) apply to every page, so `ignore` there is a site-wide allowlist.                                                                                                                        |
-| `--routing <name>`            | `cloudflare`       | `cloudflare`: `/foo` serves `foo.html`, then `foo/index.html`; `/foo/` serves `foo/index.html`. `files`: each page is checked at its own file path.                                                                                                                    |
 | `--diagnostics-dir <dir>`     | `a11y-diagnostics` | Where a failing run writes its record. A passing run writes nothing there.                                                                                                                                                                                             |
 | `--output <file>`             |                    | On a passing run, write a JSON summary: the pages checked and, with `--browser`, the browser's revision.                                                                                                                                                               |
 | `--browser <path>`            |                    | Run this browser instead of puppeteer's download. Needs `--browser-manifest` and `--browser-runtime-mode`.                                                                                                                                                             |
@@ -115,7 +115,9 @@ namespaces (Ubuntu 24.04 does), Chrome needs
 Each interactive element (links, buttons, form controls, `summary`, and
 anything with a non-negative `tabindex`) is put in the state, and its ancestors
 in `:hover` or `:focus-within`, so a rule keyed on a wrapper's state, such as
-`.card:hover a`, applies. All of a page's elements are forced at once, in one
+`.card:hover a`, applies. A focused element is in `:focus-within` itself as
+well. Elements inside open shadow roots are forced too, with each host as an
+ancestor. All of a page's elements are forced at once, in one
 axe run per state. That scores each element as its own hover would, except for
 a rule keyed on a sibling's state or on `:has()`. Transitions are switched off
 first, so the score is where a fade ends, not its first frame. Only
@@ -144,33 +146,18 @@ if (runFailed(report, printReport(report, baseUrl))) process.exitCode = 1;
 - pa11y-ci's `threshold` applies to the resting pass only: a page with no
   more resting errors than the threshold reads as a pass there, while every
   contrast error the state pass finds still fails the page.
+- The configuration must name `axe` in `runners`, and may not set `actions`,
+  `wait`, `headers`, `userAgent`, `method` or `postData`. pa11y applies those
+  only after it is handed a page the state pass has already loaded and forced,
+  so they would act too late; a run that sets one fails every page and says
+  which.
+- A closed shadow root is not scored at all: axe cannot see into one, at rest
+  or forced. Nor is a page inside an `iframe` forced.
+- A rule keyed on a sibling's state or on `:has()` is not scored, as above.
 
 ## Known issues
 
-These are open in the issue tracker. Each makes a run miss a failure, or report
-one less fully, in a narrow case; none lets anything outside the run trigger
-it.
-
-- The state pass finds and forces elements before pa11y applies the page
-  settings it applies after navigation (`actions`, `wait`, `headers`,
-  `userAgent`), so an element those add or change is scored unforced. The
-  forced-state self-check also inherits the site's scoring settings
-  (`actions`, `rootElement`, `hideElements`, `ignore`, `standard`), and can
-  fail on a page they do not fit.
-- Elements inside shadow roots are not forced.
-- With `includeWarnings` or `includeNotices`, a contrast warning from the state
-  pass fails the page but prints as `PASS` and is left out of the failure
-  record.
-- A page file whose name holds a character with a meaning in a URL (`#`, `?`,
-  `%`, a space) is requested at a URL that does not reach it, and with `#` can
-  be scored as another page.
-- A site directory with no `.html` pages passes, with `0/0`.
-- An element's own `:focus-within` rule is not forced; only its ancestors'
-  are.
-- When one state's pass fails on a page, the issues the other state found on
-  it are dropped, leaving only the technical failure in the record.
-- `--browser-manifest`'s revision is matched as a substring of the browser's
-  reported version.
+None open.
 
 ## Development
 

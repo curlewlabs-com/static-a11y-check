@@ -93,6 +93,29 @@ test("printReport: a real axe error (object with type=error) is FAIL", () => {
   assert.ok(lines.some((l) => l.includes("[color-contrast]")));
 });
 
+// pa11y-ci counts a warning or notice a config asks for as an error and the
+// page as no pass, so the run fails; printing that page as PASS would leave a
+// failed run with nothing in its log to act on.
+test("printReport: a page with only a warning is FAIL and names the warning", () => {
+  const report = {
+    total: 1,
+    passes: 0,
+    errors: 1,
+    results: {
+      "http://x/about": [
+        { type: "warning", code: "region", message: "Not in a landmark" },
+      ],
+    },
+  };
+  const { result: nonPassing, lines } = captureOutput(() =>
+    printReport(report, "http://x"),
+  );
+  assert.equal(nonPassing, 1);
+  assert.ok(lines.some((l) => l.startsWith("FAIL  /about")));
+  assert.ok(lines.some((l) => l.includes("warning [region]")));
+  assert.ok(!lines.some((l) => l.startsWith("PASS")));
+});
+
 // Injected (not captured) so the transform is asserted deterministically; the
 // real os.loadavg() values are runtime noise and not what this guards.
 const FAKE_SNAPSHOT = {

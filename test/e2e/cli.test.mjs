@@ -57,26 +57,6 @@ test(
 );
 
 test(
-  "files routing checks each page at its file path",
-  { timeout: RUN_MS + 10_000 },
-  () => {
-    const run = check("clean", ["--routing", "files"]);
-    try {
-      assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
-      const result = JSON.parse(
-        readFileSync(join(run.scratch, "result.json"), "utf8"),
-      );
-      assert.deepEqual(result.accessibility.urls, [
-        "/docs/index.html",
-        "/index.html",
-      ]);
-    } finally {
-      rmSync(run.scratch, { recursive: true, force: true });
-    }
-  },
-);
-
-test(
   "a contrast loss only under :hover fails the run",
   { timeout: RUN_MS + 10_000 },
   () => {
