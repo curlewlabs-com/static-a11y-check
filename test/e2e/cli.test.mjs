@@ -17,7 +17,7 @@ const FIXTURES = join(import.meta.dirname, "fixtures");
 // runner's own limit.
 const RUN_MS = 240_000;
 
-function check(site, extra = []) {
+function check(site, extra = [], config = "pa11yci.json") {
   const scratch = mkdtempSync(join(tmpdir(), "static-a11y-e2e-"));
   const result = spawnSync(
     process.execPath,
@@ -26,7 +26,7 @@ function check(site, extra = []) {
       "--www-dir",
       join(FIXTURES, site, "www"),
       "--config",
-      join(FIXTURES, "pa11yci.json"),
+      join(FIXTURES, config),
       "--diagnostics-dir",
       join(scratch, "diagnostics"),
       "--output",
@@ -74,6 +74,41 @@ test(
       const [failure] = record.a11yFailures[0].errors;
       assert.equal(failure.code, "color-contrast");
       assert.match(failure.message, /^:hover: /);
+    } finally {
+      rmSync(run.scratch, { recursive: true, force: true });
+    }
+  },
+);
+
+// pa11y applies `actions` only after it is handed a page the state pass has
+// already forced, so an element an action adds would be scored unforced.
+test(
+  "a configuration the state pass cannot apply fails every page",
+  { timeout: RUN_MS + 10_000 },
+  () => {
+    const run = check("clean", [], "pa11yci-actions.json");
+    try {
+      assert.notEqual(run.status, 0, run.stdout);
+      assert.match(
+        run.stdout,
+        /FAIL {2}\/ - technical failure: state pass: the state pass cannot apply `actions`/,
+      );
+    } finally {
+      rmSync(run.scratch, { recursive: true, force: true });
+    }
+  },
+);
+
+// The self-check page fails only on contrast, so scored under a site's
+// `ignore: ["color-contrast"]`, `rootElement`, `hideElements` or `standard`
+// it would pass, and the self-check would fail every page.
+test(
+  "the site's scoring settings do not reach the self-check",
+  { timeout: RUN_MS + 10_000 },
+  () => {
+    const run = check("clean", [], "pa11yci-site-settings.json");
+    try {
+      assert.equal(run.status, 0, `${run.stdout}\n${run.stderr}`);
     } finally {
       rmSync(run.scratch, { recursive: true, force: true });
     }

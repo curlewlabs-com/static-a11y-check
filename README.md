@@ -117,10 +117,12 @@ anything with a non-negative `tabindex`) is put in the state, and its ancestors
 in `:hover` or `:focus-within`, so a rule keyed on a wrapper's state, such as
 `.card:hover a`, applies. A focused element is in `:focus-within` itself as
 well. Elements inside open shadow roots are forced too, with each host as an
-ancestor. All of a page's elements are forced at once, in one
+ancestor, and a slotted element's ancestors are its flat-tree ones: its slot
+and the slot's wrappers, then the host. All of a page's elements are forced at once, in one
 axe run per state. That scores each element as its own hover would, except for
 a rule keyed on a sibling's state or on `:has()`. Transitions are switched off
-first, so the score is where a fade ends, not its first frame. Only
+first, inside each open shadow root as well as the document, so the score is
+where a fade ends, not its first frame. Only
 `color-contrast` is kept from the forced runs: the other axe rules score
 structure that a state does not change, and the resting pass already has their
 verdict.

@@ -190,3 +190,13 @@ test("static server: a malformed escape is 404, not a crash", async () => {
     assert.equal(await rawGet(baseUrl, "/about"), 200);
   });
 });
+
+// A decoded NUL reaches the filesystem calls, which throw on it inside the
+// request handler and take the process down with the run.
+test("static server: a request decoding to a NUL is 404, not a crash", async () => {
+  await withServer(async (baseUrl) => {
+    assert.equal(await rawGet(baseUrl, "/%00"), 404);
+    assert.equal(await rawGet(baseUrl, "/about%00.html"), 404);
+    assert.equal(await rawGet(baseUrl, "/about"), 200);
+  });
+});

@@ -46,7 +46,7 @@ function fakeBrowser() {
   const page = {
     setViewport: async () => {},
     goto: async () => {},
-    addStyleTag: async () => {},
+    evaluate: async () => {},
     createCDPSession: async () => cdp,
   };
   let contexts = 0;

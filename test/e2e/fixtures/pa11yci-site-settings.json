@@ -1,0 +1,13 @@
+{
+  "defaults": {
+    "runners": ["axe"],
+    "standard": "WCAG2A",
+    "timeout": 60000,
+    "chromeLaunchConfig": {
+      "args": ["--no-sandbox", "--disable-dev-shm-usage"]
+    },
+    "ignore": ["color-contrast"],
+    "rootElement": "main",
+    "hideElements": "a"
+  }
+}
