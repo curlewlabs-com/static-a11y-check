@@ -14,7 +14,12 @@ import {
 import { request } from "node:http";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { findHtmlFiles, pagePath, startStaticServer } from "../../lib/site.mjs";
+import {
+  findHtmlFiles,
+  pagePath,
+  resolveServedPath,
+  startStaticServer,
+} from "../../lib/site.mjs";
 
 function makeTree() {
   const root = mkdtempSync(join(tmpdir(), "static-a11y-site-"));
@@ -141,6 +146,7 @@ test("static server: a directory without a page is 404, not a crash", async () =
 test("static server: a raw path that climbs out of the site is 404", async () => {
   await withServer(async (baseUrl) => {
     assert.equal(await rawGet(baseUrl, "/../../../../etc/hosts"), 404);
+
     assert.equal(await rawGet(baseUrl, "/about.html"), 200);
   });
 });
@@ -199,4 +205,13 @@ test("static server: a request decoding to a NUL is 404, not a crash", async () 
     assert.equal(await rawGet(baseUrl, "/about%00.html"), 404);
     assert.equal(await rawGet(baseUrl, "/about"), 200);
   });
+});
+
+// A decoded `..` must be refused before any filesystem call, not only before
+// the file is sent: resolved first, it would let `existsSync` probe outside the
+// site.
+test("resolveServedPath: a decoded path out of the site names no file", () => {
+  assert.equal(resolveServedPath("/s", "/%2e%2e/x"), null);
+  assert.equal(resolveServedPath("/s", "/a/%2e%2e/%2e%2e/x"), null);
+  assert.equal(resolveServedPath("/s", "/a/%2e%2e/b"), "/s/b");
 });
