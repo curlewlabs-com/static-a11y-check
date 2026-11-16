@@ -5,7 +5,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseOptions } from "../../lib/cli.mjs";
-import { runConfig } from "../../lib/run.mjs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { runChecks, runConfig } from "../../lib/run.mjs";
 
 test("parseOptions: --browser needs its manifest and runtime mode", () => {
   assert.throws(
@@ -79,4 +82,21 @@ test("runConfig: does not modify the configuration it was given", () => {
   const base = { defaults: { chromeLaunchConfig: { args: [] } } };
   runConfig(base, { browserPath: "/b" });
   assert.deepEqual(base, { defaults: { chromeLaunchConfig: { args: [] } } });
+});
+
+// 0 of 0 pages would pass, so a build step that wrote an empty tree would
+// read as a clean site.
+test("runChecks: a site directory with no .html pages fails", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "static-a11y-empty-"));
+  try {
+    writeFileSync(join(dir, "style.css"), "body {}");
+    const config = join(dir, "pa11yci.json");
+    writeFileSync(config, JSON.stringify({ defaults: { runners: ["axe"] } }));
+    await assert.rejects(
+      runChecks({ wwwDir: dir, configPath: config }),
+      /no \.html pages under /,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

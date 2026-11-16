@@ -3,8 +3,8 @@
 Thanks for your interest in improving `static-a11y-check`. It is a focused
 tool, so the bar for a change is "does this make the checks catch more real
 accessibility failures, or report them more clearly, without letting a broken
-run read as green". Bug fixes, routing conventions for other static hosts, and
-clearer docs are all welcome.
+run read as green". Bug fixes and clearer docs are
+all welcome.
 
 ## Before a large change
 
