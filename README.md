@@ -155,6 +155,10 @@ if (runFailed(report, printReport(report, baseUrl))) process.exitCode = 1;
   which.
 - A closed shadow root is not scored at all: axe cannot see into one, at rest
   or forced. Nor is a page inside an `iframe` forced.
+- A shadow host's own `:focus` is not forced. Focusing a control inside a
+  shadow root puts its host in `:focus` as well as `:focus-within`, and only
+  `:focus-within` is forced on it, so a rule keyed on `:host(:focus)` is not
+  scored.
 - A rule keyed on a sibling's state or on `:has()` is not scored, as above.
 
 ## Known issues
