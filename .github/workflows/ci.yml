@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # renovate: datasource=node-version depName=node
@@ -33,6 +35,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # renovate: datasource=node-version depName=node
@@ -47,13 +51,25 @@ jobs:
 
   # The one check branch protection requires, so adding or renaming a job here
   # needs no settings change.
+  baseline:
+    # The checks every Curlew Labs repository runs, in one place:
+    # https://github.com/curlewlabs-com/ci-baseline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: curlewlabs-com/ci-baseline@c82082df9a3c5e6dab047d9ddb92f130f1537d8e # v0.1.1
+
   conclusion:
-    needs: [unit, e2e]
+    needs: [unit, e2e, baseline]
     runs-on: ubuntu-24.04
     if: always()
     steps:
       - name: Require every job to pass
         env:
           UNIT: ${{ needs.unit.result }}
+          BASELINE: ${{ needs.baseline.result }}
           E2E: ${{ needs.e2e.result }}
-        run: test "$UNIT" = success && test "$E2E" = success
+        run: test "$UNIT" = success && test "$E2E" = success && test "$BASELINE" = success
