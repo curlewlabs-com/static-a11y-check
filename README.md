@@ -131,7 +131,11 @@ verdict.
 ### From code
 
 ```js
-import { runChecks, printReport, runFailed } from "@curlewlabs-com/static-a11y-check";
+import {
+  runChecks,
+  printReport,
+  runFailed,
+} from "@curlewlabs-com/static-a11y-check";
 
 const { report, baseUrl } = await runChecks({ wwwDir: "dist" });
 if (runFailed(report, printReport(report, baseUrl))) process.exitCode = 1;
