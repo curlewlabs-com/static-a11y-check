@@ -49,8 +49,6 @@ jobs:
         run: node node_modules/puppeteer/install.mjs
       - run: npm run test:e2e
 
-  # The one check branch protection requires, so adding or renaming a job here
-  # needs no settings change.
   baseline:
     # The checks every Curlew Labs repository runs, in one place:
     # https://github.com/curlewlabs-com/ci-baseline
@@ -63,6 +61,8 @@ jobs:
       - uses: curlewlabs-com/ci-baseline@f05f17a38ba2dfbaf0cde130a375b346e9a923a2 # v0.2.0
 
   conclusion:
+    # The one check branch protection requires, so adding or renaming a job here
+    # needs no settings change.
     needs: [unit-test, e2e-test, baseline]
     runs-on: ubuntu-24.04
     if: always()
