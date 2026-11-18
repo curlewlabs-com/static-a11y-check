@@ -26,6 +26,10 @@ npm run test:e2e    # the command against fixture sites, in puppeteer's browser
 If `npm ci` held back puppeteer's install script, fetch its browser with
 `node node_modules/puppeteer/install.mjs` before the end-to-end suite.
 
+eslint runs in CI through ci-baseline. To run the same check locally, after
+installing dependencies: `<a ci-baseline checkout>/lib/lint-local.sh`. It runs
+the ci-baseline commit this repository's workflows pin.
+
 ## Conventions
 
 - **Tests ship with the change.** A bug fix or feature includes a test in the

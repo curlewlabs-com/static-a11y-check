@@ -2,7 +2,7 @@
 // merged into the same verdict, and the failure record split so a flake under
 // host contention can be told from a real regression.
 
-import { test } from "node:test";
+import { mock, test } from "node:test";
 import assert from "node:assert/strict";
 import {
   buildCheckResult,
@@ -13,13 +13,14 @@ import {
 } from "../../lib/report.mjs";
 
 function captureOutput(fn) {
-  const orig = console.log;
   const lines = [];
-  console.log = (...args) => lines.push(args.join(" "));
+  const log = mock.method(console, "log", (...args) => {
+    lines.push(args.join(" "));
+  });
   try {
     return { result: fn(), lines };
   } finally {
-    console.log = orig;
+    log.mock.restore();
   }
 }
 
@@ -326,13 +327,14 @@ test("mergeStateResults: a state-pass technical failure on a page failing at res
   assert.deepEqual(report.results["http://x/"], [restingIssue, failure]);
 
   const lines = [];
-  const log = console.log;
-  console.log = (...args) => lines.push(args.join(" "));
+  const log = mock.method(console, "log", (...args) => {
+    lines.push(args.join(" "));
+  });
   let nonPassing;
   try {
     nonPassing = printReport(report, "http://x");
   } finally {
-    console.log = log;
+    log.mock.restore();
   }
   assert.equal(nonPassing, 1);
   assert.ok(lines.some((l) => l.includes("technical failure: state pass")));
