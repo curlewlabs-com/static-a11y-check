@@ -1,6 +1,6 @@
 {
   "name": "@curlewlabs-com/static-a11y-check",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Accessibility checks for a built static site with pa11y-ci, plus color contrast under forced :hover and :focus-visible",
   "license": "MIT OR Apache-2.0",
   "author": "Curlew Labs",
