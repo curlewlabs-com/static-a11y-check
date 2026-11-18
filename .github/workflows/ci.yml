@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  unit:
+  unit-test:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,7 +31,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm test
 
-  e2e:
+  e2e-test:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,13 +63,13 @@ jobs:
       - uses: curlewlabs-com/ci-baseline@f05f17a38ba2dfbaf0cde130a375b346e9a923a2 # v0.2.0
 
   conclusion:
-    needs: [unit, e2e, baseline]
+    needs: [unit-test, e2e-test, baseline]
     runs-on: ubuntu-24.04
     if: always()
     steps:
       - name: Require every job to pass
         env:
-          UNIT: ${{ needs.unit.result }}
+          UNIT: ${{ needs.unit-test.result }}
           BASELINE: ${{ needs.baseline.result }}
-          E2E: ${{ needs.e2e.result }}
+          E2E: ${{ needs.e2e-test.result }}
         run: test "$UNIT" = success && test "$E2E" = success && test "$BASELINE" = success
