@@ -59,3 +59,10 @@ deletions of those tags, and publishing the GitHub Release makes its tag and
 release assets immutable. After merging the release commit to `main`, tag it,
 build the package with `npm pack`, and create the release as a draft with the
 tarball attached; check it, then publish it.
+
+## License
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this project by you, as defined in the Apache-2.0 license,
+shall be dual licensed under the MIT and Apache-2.0 licenses, as the README's
+License section describes, without any additional terms or conditions.
