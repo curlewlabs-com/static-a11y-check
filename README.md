@@ -49,7 +49,7 @@ Node 24 or later. The package is `@curlewlabs-com/static-a11y-check`, and it
 is not on the npm registry: install it from a release's package tarball.
 
 ```sh
-npm install --save-dev https://github.com/curlewlabs-com/static-a11y-check/releases/download/v0.3.1/curlewlabs-com-static-a11y-check-0.3.1.tgz
+npm install --save-dev https://github.com/curlewlabs-com/static-a11y-check/releases/download/v0.3.2/curlewlabs-com-static-a11y-check-0.3.2.tgz
 ```
 
 Its one dependency, pa11y-ci, brings puppeteer, which downloads the browser it
