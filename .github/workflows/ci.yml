@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # renovate: datasource=node-version depName=node
-          node-version: 24.22.2
+          node-version: 24.22.3
       # No browser is needed here, so puppeteer's download is skipped.
       - run: npm ci --ignore-scripts
       - run: npm test
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           # renovate: datasource=node-version depName=node
-          node-version: 24.22.2
+          node-version: 24.22.3
       - run: npm ci --ignore-scripts
       # Puppeteer's own browser download, run as a step of its own: npm can
       # hold back a dependency's install script, and the suite needs the
